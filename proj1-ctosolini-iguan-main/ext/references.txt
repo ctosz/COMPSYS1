@@ -1,0 +1,223 @@
+Attributions of external code adapted for this project.
+
+REFERENCE 1: {
+
+    RELEVANT CODE
+    FILE
+        memory_allocation.c
+
+    FUNCTIONS
+            create_memory_manager
+            init_memory_manager
+            free_memory_manager 
+
+    SOURCE ATTRIBUTION 
+    Adapted from implementation by Claire Tosolini (1271302), Project 2 Foundations of Algorithms Sem2 2022. Code by Alistair Moffat, adapted by Jianzhong Qi April 2022. 
+
+    ADAPTION ATTRIBUTION 
+    Edited by Claire Tosolini 1271302 and Iat Long Guan 1266470 for Project 1 Computer Systems Sem1 2024.
+
+    ORIGINAL CODE
+    1. 
+    list_t *make_empty_list(void)
+    {
+        list_t *list;
+        list = (list_t *)malloc(sizeof(*list));
+        assert(list != NULL);
+        list->head = list->foot = NULL;
+        return list;
+    }
+
+    2.
+    list_t *create_empty_list()
+    {
+        list_t *new_list = malloc(sizeof(list_t)); // must free this
+        new_list->head = new_list->foot = NULL;
+        return new_list;
+    }
+
+    3.
+    void free_list(list_t *list)
+    {
+        customer_record_t *curr, *prev;
+        assert(list != NULL);
+        curr = list->head;
+        while (curr)
+        {
+            prev = curr;
+            curr = curr->next;
+            free(prev);
+        }
+        free(list);
+    }
+
+    CORRESPONDING ADAPTED FUNCTIONS 
+    1. 
+    MemoryManager* create_memory_manager() {
+
+        MemoryManager* mm = (MemoryManager*)malloc(sizeof(MemoryManager));
+        assert(mm != NULL); 
+        mm->head = NULL;
+        mm->tail = NULL;
+        mm->mem_available = MAX_KB_AVAILABLE;
+
+        return mm;
+    }
+
+    2.
+    MemoryManager* init_memory_manager(MemoryManager* mm, MemoryStrategy strategy) {
+
+        MemoryAddress* new;
+        new = (MemoryAddress*)malloc(sizeof(*new));
+
+        assert(new != NULL && mm != NULL);
+
+        new->use = HOLE;
+        new->length = MAX_KB_AVAILABLE;
+        new->nxt = new->prev = NULL;
+        new->starting_address = 0; // starts at 0, ends at length. [0, 2048)
+
+        mm->head = mm->tail = new;
+        mm->strategy = strategy;
+        return mm;
+    }
+
+    3. 
+    void free_memory_manager(MemoryManager* mm) {
+
+        MemoryAddress* curr;
+        MemoryAddress* prev;
+        
+        assert(mm != NULL);
+
+        curr = mm->head;
+        while(curr) {
+            prev = curr;
+            curr = curr->nxt;
+            free(prev);
+        }
+
+        free(mm);
+    }
+
+}
+
+
+REFERENCE 2: {
+
+    RELEVANT CODE
+    FILE
+        process.c
+
+    FUNCTIONS
+        init_scheduler_queue
+        enqueue
+        dequeue
+
+    SOURCE ATTRIBUTION 
+    Adapted from implementation shared on https://www.programiz.com/dsa/circular-queue  
+
+    ADAPTION ATTRIBUTION 
+    Edited by Claire Tosolini 1271302 and Iat Long Guan 1266470 for Project 1 Computer Systems Sem 1 2024.
+
+    ORIGINAL CODE
+    1.
+        int items[SIZE];
+        int front = -1, rear = -1;
+
+        // Check if the queue is full
+        int isFull() {
+        if ((front == rear + 1) || (front == 0 && rear == SIZE - 1)) return 1;
+        return 0;
+        }
+
+        // Check if the queue is empty
+        int isEmpty() {
+        if (front == -1) return 1;
+        return 0;
+        }
+    2.
+        // Adding an element
+        void enQueue(int element) {
+        if (isFull())
+            printf("\n Queue is full!! \n");
+        else {
+            if (front == -1) front = 0;
+            rear = (rear + 1) % SIZE;
+            items[rear] = element;
+            printf("\n Inserted -> %d", element);
+        }
+        }
+    3.
+        // Removing an element
+        int deQueue() {
+        int element;
+        if (isEmpty()) {
+            printf("\n Queue is empty !! \n");
+            return (-1);
+        } else {
+            element = items[front];
+            if (front == rear) {
+            front = -1;
+            rear = -1;
+            } 
+            // Q has only one element, so we reset the 
+            // queue after dequeing it. ?
+            else {
+            front = (front + 1) % SIZE;
+            }
+            printf("\n Deleted element -> %d \n", element);
+            return (element);
+        }
+        }
+
+    CORRESPONDING ADAPTED FUNCTIONS 
+    1.
+        void init_scheduler_queue(CircularQueue* queue, int capacity) {
+            queue->arr = (int*)malloc(capacity * sizeof(int));
+            if (!queue->arr) {
+                perror("Failed to allocate memory for scheduler queue");
+                exit(EXIT_FAILURE);
+            }
+            queue->capacity = capacity;
+            queue->head = -1; 
+            queue->tail = -1; 
+            queue->size = 0;
+        }
+    2.
+        void enqueue(CircularQueue* cq, int process_index) {
+            if (cq->size == cq->capacity) {
+                perror("Error: Attempting to enqueue to a full queue\n");
+                exit(EXIT_FAILURE);
+            }
+            if (cq->head == -1) {
+                cq->head = 0;
+            }
+            // Add the process index to the tail of the circular queue
+            cq->tail = (cq->tail + 1) % cq->capacity;
+            cq->arr[cq->tail] = process_index;
+            cq->size++;
+
+        }
+    3.
+        int dequeue(CircularQueue* cq) {
+            if (cq->size == 0) {
+                perror("Queue is empty. Cannot dequeue.\n");
+                return -1; 
+            }
+            // Get the process index stored at the head of the circular queue
+            
+            int process_index = cq->arr[cq->head];
+            if (cq->head == cq->tail) {
+                cq->head = -1;
+                cq->tail = -1;
+            } else {
+                cq->head = (cq->head + 1) % cq->capacity; 
+            }
+            
+            cq->size--; 
+
+            return process_index;
+        }
+
+}
